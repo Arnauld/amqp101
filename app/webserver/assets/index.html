@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+   <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+   <title>Technbolt's - Arnauld's Ramblings</title>
+   <link rel="stylesheet" type="text/css" href="asset/bootstrap/css/bootstrap.css">
+</head>
+<body>
+    <p>
+        <button href="#" id="login" class="btn btn-danger">Logout</button>
+    </p>
+
+	<h1>System</h1>
+	<ul id="system"></ul>
+    
+    <h1>Notification</h1>
+	<ul id="notification"></ul>
+
+<script type="text/javascript" src="asset/jquery-1.8.2.min.js"></script>
+<script type="text/javascript" src="asset/bootstrap/js/bootstrap.min.js"></script>
+
+<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        var socket;
+        var logged;
+
+        var login = function () {
+            console.log("About to get logged through socket.io");
+            logged = true;
+            socket = io.connect(null,{'force new connection':true}); // see bug https://github.com/LearnBoost/socket.io-client/issues/251
+            socket.emit('system', "Hello server!");
+
+            socket.on('system', function (text) {
+                $("#system").append("<li>" + text + "</li>");
+            });
+            socket.on('notification', function (text) {
+                $("#notification").append("<li>Notif: " + text.context.numeroExterne + ": " + JSON.stringify(text.context) + "</li>");
+            });
+        }
+        login();
+
+        $("#login").click(function() {
+            var $this = $(this);
+            if(logged) {
+                logged = false;
+                $this.removeClass("btn-danger").addClass("btn-primary");
+                $this.text("Login");
+                socket.disconnect();
+            }
+            else {
+                $this.removeClass("btn-primary").addClass("btn-danger");
+                $this.text("Logout");
+                login();
+            }
+        })
+    });
+</script>
+
+</body>
+</html>

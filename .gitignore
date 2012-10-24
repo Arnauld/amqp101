@@ -1,0 +1,24 @@
+# use glob syntax.
+syntax: glob
+*.ser
+*.class
+*~
+*.bak
+*.off
+*.old
+.DS_Store
+
+# lib'n misc
+node_modules/
+rabbit-src/
+
+# building
+target/
+test-output/
+tmp/
+
+# other scm
+.svn
+.CVS
+.hg*
+
