@@ -171,6 +171,22 @@ var setupAmqp = function() {
 
 
 logger.info("Starting amqp on " + amqp.brokerUrl);
-var conn = require('amqp').createConnection({url: amqp.brokerUrl});
-conn.on('ready', setupAmqp);
+var maxRetry = 20;
+var retry = 0;
 
+logger.info("Opening AMQP connection on " + conf.brokerUrl);
+var conn = require('amqp').createConnection({url: conf.brokerUrl});
+conn.on('ready', function() {
+  retry = 0; // reset retry counter
+  setupAmqp();
+});
+conn.on('error', function(err) {
+  logger.error("Failed to open AMQP connection (attempt " + (++retry) + "/" + maxRetry + ")");
+  if(retry===maxRetry) {
+    if(conf.queue) {
+      conf.queue.destroy();
+    }
+    conn.end();
+    process.exit(-1);
+   }
+});

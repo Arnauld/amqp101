@@ -1,4 +1,4 @@
-# Starting the Server
+# Starting the Broker
 
     cd ~/dev/rabbitmq_server-2.8.7
 
@@ -12,3 +12,6 @@ To stop the server type:
 
 
     
+Management: guest/guest
+
+   http://localhost:55672/mgmt/
