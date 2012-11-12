@@ -31,11 +31,13 @@ exports.createQueue = function(connection, queueConf, exchange, consumer) {
     var exchangeName  = exchange.name;
 
     console.log("Creating queue '%s'", queueName);
-    var q = connection.queue(queueName, function(queue) {
+    connection.queue(queueName, function(queue) {
 
+      console.log("Subscribing consumer on queue '%s' with settings: %j", 
+                  queueName, exchangeName, bindingKey, queueSettings);
       queue.subscribe(queueSettings, consumer(queue));
 
-      console.log("Binding queue '%s' on exchange '%s' routingKey: %s", 
+      console.log("Binding queue '%s' on exchange '%s' using routingKey: '%s'", 
                   queueName, exchangeName, bindingKey);
       queue.bind(exchangeName, bindingKey);
     });
