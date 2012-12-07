@@ -1,5 +1,3 @@
-var crypto = require('crypto');
-
 
 function RPC(requestExchange) {
   var self = this;
@@ -19,14 +17,21 @@ RPC.prototype.onResponse = function(correlationId, message) {
   var self = this;
   if(self.requests[correlationId]) {
     var request = self.requests[correlationId];
+
+    // prevent timeout guard to trigger
+    clearTimeout(request.guard);
+
+    // remove the request from the spawned ones
     delete self.requests[correlationId];
     
-    clearTimeout(request.guard);
     request.callback(null, message);
     self.inprogress--;
   }
+  else {
+    console.log("No matching request found for response (correlationId %s); Request timeout?", correlationId);
+  }
 
-  console.log("Still in progress %j", self.inprogress);
+  console.log("Requests pending #%j", self.inprogress);
   if(self.inprogress === 0) {
     self.onDone();
   }
@@ -36,13 +41,16 @@ RPC.prototype.registerReplyTo = function(replyToQueue) {
   var self = this;
   self.replyToQueue = replyToQueue;
 
-  replyToQueue.subscribe({ack:true, exclusive:true}, function(msg, headers, deliveryInfo, m) {
-    var routingKey = deliveryInfo.routingKey;
-    console.log("Replied '%s' // '%j': %j // %j", routingKey, headers, msg);
+  // register ~itself as a listener, reacting when a response is received
+  // in the dedicated 'replyTo' queue
+  var options = { ack:false, exclusive:true };
+  replyToQueue.subscribe(options, function(msg, headers, deliveryInfo, m) {
     self.onResponse(m.correlationId, msg);
   });
   return self;
 }
+
+var cId = 0;
 
 RPC.prototype.emitRequest = function(message, callback) {
   var self = this;
@@ -50,17 +58,18 @@ RPC.prototype.emitRequest = function(message, callback) {
   self.inprogress++;
   
   // generate a unique correlationId for the request
-  var correlationId = crypto.randomBytes(16).toString('hex');
+  var correlationId = "0x" + (cId++);
 
-  // no response after timeout
-  var guard = setTimeout(function(){
+  // timout when no response was received after a given amount of time
+  var guard = setTimeout(function() {
+    console.log("No response in time %s: timeout", correlationId);
     var request = self.requests[correlationId];
     delete self.requests[correlationId];
     
-    request.callback({error:"timout"});
+    request.callback({error:"timout", correlationId:correlationId});
     self.inprogress--;
 
-  }, message.timeout || 500);
+  }, message.timeout || 2000);
 
   // track request
   self.requests[correlationId] = {
@@ -76,8 +85,8 @@ RPC.prototype.emitRequest = function(message, callback) {
 
   var key = message.key;
   var msg = message.payload;
-  console.log("Publishing message on exchange '%s', routingKey: %s, payload: %j, options: %j", 
-              self.requestExchange.name, key, msg, opts);
+  console.log("Publishing message payload: %j, correlationId: %j", 
+              msg, correlationId);
   var res = self.requestExchange.publish(key, msg, opts);
   console.log("Res %j", res);
 };

@@ -34,9 +34,24 @@ function consumer(queue) {
 /**
  * ~Currying+Adapting
  */
-function createQueueWith(queueConf, consumer) {
+function createQueueAndRegisterConsumer(queueConf, consumer) {
   return function(connection, exchange) {
-    amqpUtils.createQueue(connection, queueConf, exchange, consumer);
+    var queueName     = queueConf.name;
+    var bindingKey    = queueConf.bindingKey;
+    var queueSettings = queueConf.settings;
+    var exchangeName  = exchange.name;
+
+    console.log("Creating queue '%s'", queueName);
+    connection.queue(queueName, function(queue) {
+
+      console.log("Subscribing consumer on queue '%s' with settings: %j", 
+                  queueName, exchangeName, bindingKey, queueSettings);
+      queue.subscribe(queueSettings, consumer(queue));
+
+      console.log("Binding queue '%s' on exchange '%s' using routingKey: '%s'", 
+                  queueName, exchangeName, bindingKey);
+      queue.bind(exchangeName, bindingKey);
+    });
   };
 }
 
@@ -44,12 +59,13 @@ function createQueueWith(queueConf, consumer) {
 console.log("Opening AMQP connection on %s", conf.broker.url);
 var connection = require('amqp').createConnection({url: conf.broker.url});
 
+var onceExchangeReady = createQueueAndRegisterConsumer(conf.queue,
+                                                       consumer);
+
 // Wait for connection to become established
-var onceExchangeReady = createQueueWith(conf.queue,
-                                        consumer);
 connection.on('ready', amqpUtils.openExchange(connection, 
-                                             conf.exchange,
-                                             onceExchangeReady));
+                                              conf.exchange,
+                                              onceExchangeReady));
 
 // help to track error
 connection.on('error', function(err) { 

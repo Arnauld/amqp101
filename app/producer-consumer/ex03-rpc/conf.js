@@ -4,7 +4,7 @@ module.exports = {
   },
   exchange: { 
   	name: "service", 
-  	settings: { type: "topic", durable:true} 
+  	settings: { type: "topic", durable:true } 
   },
   queue: { 
     name: "queue-service", 

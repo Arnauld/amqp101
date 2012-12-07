@@ -14,15 +14,22 @@ var conf = require('./conf')
  *
  *
  */
-function producer(rpc, next) {
-  rpc.onceDone(next);
-  rpc.emitRequest({
-      key: "uuid",
-      payload: { action: "generate-uuid" }
-    }, 
-    function(err, response) {
-      console.log("Hey! %j", response);
-    });
+function producer(rpc) {
+
+  var loop;
+  for(loop=0; loop<program.loop; loop++) {
+    var l = loop;
+    rpc.emitRequest({
+        key: "uuid",
+        payload: { action: "generate-uuid" }
+      }, 
+      function(err, response) {
+        if(err)
+          console.log("Ooops! %j", err);
+        else
+          console.log("Hey! %j", response);
+      });
+  }
 }
 
 /**
@@ -30,7 +37,8 @@ function producer(rpc, next) {
  */
 function registerProducer(next) {
   return function(rpc) {
-    producer(rpc, next);
+    rpc.onceDone(next);
+    producer(rpc);
   };
 }
 
@@ -50,15 +58,18 @@ function createReplyToQueue(next) {
 }
 
 // utility method
-var exitOnceDone = function() {
-  process.exit(0);
+var exitOnceDone = function(connection) {
+  return function() {
+    connection.end();
+    connection.on('close', function() { process.exit(0); });
+  }
 }
 
 // open connection
 console.log("Opening AMQP connection on %s", conf.broker.url);
 var connection = require('amqp').createConnection({url: conf.broker.url});
 
-var onceReplyToQueueCreated = registerProducer(exitOnceDone);
+var onceReplyToQueueCreated = registerProducer(exitOnceDone(connection));
 var onceExchangeReady = createReplyToQueue(onceReplyToQueueCreated);
 
 // Wait for connection to become established

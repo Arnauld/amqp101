@@ -1,7 +1,39 @@
 // shared configuration stored in conf.js
 var conf = require('./conf')
   , amqpUtils = require('../shared/amqp-utils')
+  , crypto = require('crypto')
   ;
+
+var handlers = {
+  'generate-uuid' : function(msg, callback) {
+    var random = crypto.randomBytes(4).toString('hex') + "-" +
+                 crypto.randomBytes(2).toString('hex') + "-" +
+                 crypto.randomBytes(2).toString('hex') + "-" +
+                 crypto.randomBytes(2).toString('hex') + "-" +
+                 crypto.randomBytes(6).toString('hex');
+    callback(null, { uuid: random });
+  }
+};
+
+var simulateWork = true;
+function handleCall(correlationId, msg, callback) {
+  var handler = handlers[msg.action];
+  if(handler) {
+    console.log("Handling request %s action %s", correlationId, msg.action);
+    if(simulateWork) {
+      setTimeout(function() {
+        handler(msg, callback);
+      }, Math.random() * 4000);
+    }
+    else {
+      handler(msg, callback);
+    }
+  }
+  else {
+    console.log("Unsupported action %s", msg.action);
+    callback({error:"Unsupported action"});
+  }
+}
 
 /**
  * Our consumer implementation:
@@ -18,24 +50,16 @@ function consumer(connection, queue, queueConf) {
             var routingKey = deliveryInfo.routingKey;
             var replyTo = m.replyTo;
             var correlationId = m.correlationId;
-            console.log(" '%s' // '%j': %j ~ %j", routingKey, headers, msg, [replyTo, correlationId]);
 
-            if(replyTo) {
-              var opts = {
-                contentType: "application/json",
-                correlationId: correlationId
-              };
-              connection.publish(replyTo, {message: "Job's done!"}, opts);
-            }
-
-            if(queueConf.settings.ack) {
-              // Setting the options argument to 
-              // { ack: true } (which defaults to false) 
-              // will make it so that the AMQP server 
-              // only delivers a single message at a time.
-              // When you want the next message, call q.shift(). 
-              queue.shift();
-            }
+            handleCall(correlationId, msg, function(error, result) {
+              if(replyTo) {
+                var opts = {
+                  contentType: "application/json",
+                  correlationId: correlationId
+                };
+                connection.publish(replyTo, error||result, opts);
+              }
+            });
           };
 }
 
