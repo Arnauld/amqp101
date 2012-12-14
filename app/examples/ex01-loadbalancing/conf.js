@@ -4,11 +4,10 @@ module.exports = {
   },
   exchange: { 
   	name: "tasks", 
-  	settings: { type: "topic", durable:true} 
+  	settings: { type: "topic", durable:true }  
   },
   queue: { 
-    exchangeName: "tasks",
-  	queueName: "queue-tasks", 
+    name: "queue-tasks", 
   	bindingKey: "#",
   }
 };

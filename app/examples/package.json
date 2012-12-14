@@ -2,10 +2,11 @@
     "name":"node-amqp-demo",
     "version":"0.0.1",
     "dependencies": {
-        "amqp"      : ">= 0.1.0",
-        "commander" : "1.0.x",
-        "moment"    : "1.7.x",
-        "colors"    : "0.6.x",
-        "q"         : "0.8.x"
+        "amqp"           : ">= 0.1.0",
+        "commander"      : "1.0.x",
+        "moment"         : "1.7.x",
+        "colors"         : "0.6.x",
+        "q"              : "0.8.x",
+        "porter-stemmer" : "0.9.x"
     }
 }

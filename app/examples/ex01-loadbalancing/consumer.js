@@ -43,13 +43,15 @@ amqp.connect({url: conf.broker.url})
     	return amqp.queue(res.connection, conf.queue);
     })
     .then(function(res) {
-    	var queue = res.queue;
-    	var settings = { ack: true };
+    	var queue = res.queue
+        , settings = { ack: true }
+        , exchangeName = conf.exchange.name
+        , bindingKey   = conf.queue.bindingKey
+        ;
+
     	log.info("Queue %s ready, subscribing with setting %j", queue.name, settings);
     	queue.subscribe(settings, consumerFor(queue));
 
-    	var exchangeName = conf.queue.exchangeName;
-    	var bindingKey   = conf.queue.bindingKey;
     	log.info("Binding queue '%s' on exchange '%s' using binding key '%s'", queue.name, exchangeName, bindingKey);
     	queue.bind(exchangeName, bindingKey);
     })
