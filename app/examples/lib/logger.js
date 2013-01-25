@@ -43,7 +43,13 @@ Logger.prototype.debug = function(message) {
 function log(level, message, params) {
   var time = moment().format('YYYY/MM/DD HH:mm:ss.SSS')
   var args = 
-  	[time.debug + " - " + level + " - " + message].concat(Array.prototype.slice.call(params).slice(1));
+  	[time.debug + " - " + level + " - " + message].concat(Array.prototype.slice.call(params).slice(1).map(function(arg) {
+      var typeOf = (typeof arg);
+      if(typeOf === "string") {
+        return arg.blue;
+      }
+      return arg;
+    }));
   console.log.apply(
   	console,
   	args);

@@ -6,3 +6,26 @@ http://snowball.tartarus.org/algorithms/french/stemmer.html
 
 http://snowball.tartarus.org/otherlangs/french_javascript.txt
 http://snowball.tartarus.org/algorithms/french/stop.txt
+
+
+
+
+
+
+
+     [split    ] {topic} + named-queue
+         |
+         v
+     [clean    ] {topic} + named-queue
+         |
+         v
+     [normalize] {topic} + named-queue
+         |
+         v
+       [index] {topic}
+     
+         |           \
+         | #.insert   \  #.query
+         v             \
+       
+     [index]----()     [query]----()

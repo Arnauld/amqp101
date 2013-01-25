@@ -7,6 +7,7 @@
         "moment"         : "1.7.x",
         "colors"         : "0.6.x",
         "q"              : "0.8.x",
-        "porter-stemmer" : "0.9.x"
+        "porter-stemmer" : "0.9.x",
+        "htmlparser"     : "1.7.x"
     }
 }

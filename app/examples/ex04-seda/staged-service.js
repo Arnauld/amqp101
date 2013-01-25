@@ -1,11 +1,10 @@
 // simple command line argument parser
 var program = require('commander');
-program.version('1.0.0').option('-s, --stage [split|clean|normalize|index]', "Service's stage [split]", 'split').parse(process.argv);
+program.version('1.0.0').option('-s, --stage [split|clean|normalize|index|query]', "Service's stage [split]", 'split').parse(process.argv);
 
 
 // shared configuration stored in conf.js
-var conf = require('./conf'),
-    amqp = require('../lib/amqp-q-promise'),
+var context = require('./init-amqp').context,
     Logger = require('../lib/logger'),
     log = new Logger(),
     env = { id: require('crypto').randomBytes(8).toString("hex") };
@@ -42,6 +41,27 @@ function consumerFor(queue, exchange) {
         });
     };
 }
+
+var srcQueue, dstExchange;
+if(program.stage === "split") {
+    srcQueue = "splitQ";
+    dstExchange = "clean";
+}
+else if(program.stage === "clean") {
+    srcQueue = "cleanQ";
+    dstExchange = "normalize";
+}
+else if(program.stage === "normalize") {
+    srcQueue = "normalizeQ";
+    dstExchange = "index";
+}
+else if(program.stage === "index") {
+    srcQueue = "splitQ";
+    dstExchange = "clean";
+}
+
+
+context[program.stage + "Q"]
 
 function set(context, key, value) {
     context[key] = value;
